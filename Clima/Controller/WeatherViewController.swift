@@ -18,13 +18,18 @@ class WeatherViewController: UIViewController {
     
     var weatherManager = WeatherManager()
     let locationManager = CLLocationManager()
+    var dispatchQueue = DispatchQueue(label: "KARPOV", qos: .userInteractive)
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        
+        
         locationManager.requestWhenInUseAuthorization()
         locationManager.delegate = self
-        locationManager.requestLocation()
+        DispatchQueue.main.async {
+            self.locationManager.requestLocation()
+        }
         
         
         weatherManager.delegate = self
@@ -33,7 +38,10 @@ class WeatherViewController: UIViewController {
     
     
     @IBAction func locationButton(_ sender: UIButton) {
-        locationManager.requestLocation()
+        DispatchQueue.main.async {
+            self.locationManager.requestLocation()
+        }
+        
     }
     
 }
@@ -62,8 +70,8 @@ extension WeatherViewController: UITextFieldDelegate {
     
     func textFieldDidEndEditing(_ textField: UITextField) {
         if let city = searchTextField.text {
-            
-            weatherManager.fetchWeather(cityName: city)
+            let locations = "&q=" + "\(city)"
+            weatherManager.fetchWeather(location: locations)
         }
         searchTextField.text = ""
     }
@@ -94,8 +102,11 @@ extension WeatherViewController: CLLocationManagerDelegate {
     
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if let loc = locations.first {
-            print("\(loc)")
+        if let location = locations.last {
+            locationManager.stopUpdatingLocation()
+            let lat = location.coordinate.latitude
+            let lon = location.coordinate.longitude
+            weatherManager.createLocation(lat: lat, lon: lon)
         }
         
     }
